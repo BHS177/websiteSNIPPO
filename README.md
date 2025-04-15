@@ -1,37 +1,4 @@
-# EZ Video Generator
-
-A powerful video generation application built with React and Firebase.
-
-## Features
-
-- Google Authentication
-- Video Generation with AI
-- Background Music Integration
-- Premium Subscription Support via Whop
-- Beautiful Dashboard Interface
-- Free and Premium Plans
-
-## Setup
-
-1. Clone the repository
-2. Install dependencies:
-```bash
-npm install
-```
-3. Create a `.env` file with your configuration (see `.env.example`)
-4. Run the development server:
-```bash
-npm run dev
-```
-
-## Technologies Used
-
-- React
-- Vite
-- Firebase
-- Tailwind CSS
-- Framer Motion
-- TypeScript
+# Welcome to your Lovable project
 
 ## Project info
 
@@ -82,6 +49,16 @@ npm run dev
 - Select the "Codespaces" tab.
 - Click on "New codespace" to launch a new Codespace environment.
 - Edit files directly within the Codespace and commit and push your changes once you're done.
+
+## What technologies are used for this project?
+
+This project is built with .
+
+- Vite
+- TypeScript
+- React
+- shadcn-ui
+- Tailwind CSS
 
 ## How can I deploy this project?
 
