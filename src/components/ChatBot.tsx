@@ -36,8 +36,6 @@ export interface ChatMessage {
   approved?: boolean;
 }
 
-const OPENAI_API_KEY = import.meta.env.VITE_OPENAI_API_KEY;
-
 const ChatBot: React.FC = () => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
@@ -53,6 +51,8 @@ const ChatBot: React.FC = () => {
   const [showGenerateCaptionsButton, setShowGenerateCaptionsButton] = useState(false);
   const [isGeneratingCaptions, setIsGeneratingCaptions] = useState(false);
   const [awaitingFeedback, setAwaitingFeedback] = useState(false);
+  
+  const PROJECT_API_KEY = "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";
   
   useEffect(() => {
     const initialMessage: ChatMessage = {
@@ -160,7 +160,7 @@ ${clipCountInfo}`;
       const response = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${OPENAI_API_KEY}`,
+          'Authorization': `Bearer ${PROJECT_API_KEY}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({

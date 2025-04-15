@@ -2,7 +2,7 @@
 
 import { toast } from "sonner";
 
-const OPENAI_API_KEY = import.meta.env.VITE_OPENAI_API_KEY;
+const PROJECT_API_KEY = "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";
 const MAX_RETRIES = 2;
 
 export const getMaskedApiKey = (): string => "Pre-configured";
@@ -138,7 +138,7 @@ export const generateCaptions = async (description: string): Promise<string> => 
       const res = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${OPENAI_API_KEY}`,
+          'Authorization': `Bearer ${PROJECT_API_KEY}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
@@ -220,7 +220,7 @@ export const generateThemedCaptions = async (description: string, clipCount: num
       fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${OPENAI_API_KEY}`,
+          'Authorization': `Bearer ${PROJECT_API_KEY}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
