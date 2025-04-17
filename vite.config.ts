@@ -4,51 +4,30 @@ import path from "path";
 import { componentTagger } from "lovable-tagger";
 
 // https://vitejs.dev/config/
-export default defineConfig(({ mode }) => ({
-  server: {
-    host: "localhost",
-    port: 8081,
-    strictPort: true,
-    hmr: {
-      overlay: false // Disable the HMR overlay to reduce overhead
-    }
-  },
-  build: {
-    target: 'esnext',
-    minify: 'esbuild',
-    rollupOptions: {
-      output: {
-        manualChunks: {
-          'vendor': ['react', 'react-dom', 'framer-motion'],
-          'ui': ['@radix-ui/react-toast', '@radix-ui/react-dialog']
-        }
-      }
-    }
-  },
-  optimizeDeps: {
-    include: ['react', 'react-dom', 'framer-motion'],
-    exclude: ['@radix-ui/react-toast']
-  },
-  plugins: [
-    react({
-      plugins: [],
-      swcOptions: {
-        jsc: {
-          transform: {
-            react: {
-              runtime: 'automatic',
-              development: mode === 'development',
-              refresh: mode === 'development'
-            }
-          }
-        }
-      }
-    }),
-    mode === 'development' && componentTagger(),
-  ].filter(Boolean),
+export default defineConfig({
+  plugins: [react()],
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
   },
-}));
+  build: {
+    outDir: 'dist',
+    sourcemap: false,
+    minify: 'terser',
+    chunkSizeWarningLimit: 1600,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom'],
+          firebase: ['firebase/app', 'firebase/auth', 'firebase/firestore', 'firebase/storage'],
+          ui: ['@radix-ui/react-dialog', '@radix-ui/react-dropdown-menu', '@radix-ui/react-toast']
+        }
+      }
+    }
+  },
+  server: {
+    host: true,
+    port: 3000
+  }
+});

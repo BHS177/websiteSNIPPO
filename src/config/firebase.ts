@@ -1,6 +1,7 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider, browserLocalPersistence, setPersistence } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
+import { getAnalytics } from 'firebase/analytics';
 
 // Debug: Log environment variables (without sensitive data)
 console.log('Environment Variables Check:', {
@@ -32,10 +33,11 @@ const app = initializeApp(firebaseConfig);
 // Initialize services
 const auth = getAuth(app);
 const db = getFirestore(app);
+const analytics = getAnalytics(app);
 const googleProvider = new GoogleAuthProvider();
 
 // Configure auth persistence
 setPersistence(auth, browserLocalPersistence);
 
 // Export instances
-export { auth, db, googleProvider }; 
+export { auth, db, googleProvider, analytics }; 

@@ -38,11 +38,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
-        // Get user data from localStorage or set default values
-        const savedData = localStorage.getItem(`user_${firebaseUser.uid}`);
+        // Get saved user data or set defaults
+        const savedData = localStorage.getItem(`user_data_${firebaseUser.uid}`);
         const userData = savedData ? JSON.parse(savedData) : {
-          freeVideosRemaining: 2,
-          isSubscribed: false
+          freeVideosRemaining: 2, 
+          isSubscribed: false 
         };
 
         const user = {
@@ -51,7 +51,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           displayName: firebaseUser.displayName || '',
           photoURL: firebaseUser.photoURL || '',
           freeVideosRemaining: userData.freeVideosRemaining,
-          isSubscribed: userData.isSubscribed
+          isSubscribed: userData.isSubscribed 
         };
         setUser(user);
         toast.success(`Welcome ${user.displayName || 'back'}!`);
@@ -66,28 +66,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signInWithGoogle = async () => {
     try {
-      console.log('Attempting Google sign in...');
       const result = await signInWithPopup(auth, googleProvider);
       console.log('Sign in successful:', result.user.email);
       toast.success('Successfully signed in!');
     } catch (error: any) {
-      console.error('Detailed sign-in error:', {
-        code: error.code,
-        message: error.message,
-        email: error.email,
-        credential: error.credential
-      });
-      
-      if (error.code === 'auth/popup-closed-by-user') {
-        toast.error('Sign-in cancelled. Please try again.');
-      } else if (error.code === 'auth/unauthorized-domain') {
-        toast.error('This domain is not authorized. Please contact support.');
-        console.error('Domain not authorized. Add this domain to Firebase Console -> Authentication -> Settings -> Authorized domains');
-      } else if (error.code === 'auth/internal-error') {
-        toast.error('Internal error. Please try again in a few minutes.');
-      } else {
-        toast.error(`Failed to sign in: ${error.message}`);
-      }
+      console.error('Sign-in error:', error);
+      toast.error(`Failed to sign in: ${error.message}`);
       throw error;
     }
   };
@@ -105,10 +89,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const decrementFreeVideos = () => {
     if (user && !user.isSubscribed && user.freeVideosRemaining > 0) {
       const newCount = user.freeVideosRemaining - 1;
-      const newUser = { ...user, freeVideosRemaining: newCount };
-      setUser(newUser);
+      const updatedUser = { ...user, freeVideosRemaining: newCount };
+      setUser(updatedUser);
+      
       // Save to localStorage
-      localStorage.setItem(`user_${user.uid}`, JSON.stringify({
+      localStorage.setItem(`user_data_${user.uid}`, JSON.stringify({
         freeVideosRemaining: newCount,
         isSubscribed: user.isSubscribed
       }));
@@ -130,10 +115,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         membership.user_id === user.uid && membership.status === 'active'
       );
       
-      const newUser = { ...user, isSubscribed: isActive };
-      setUser(newUser);
+      const updatedUser = { ...user, isSubscribed: isActive };
+      setUser(updatedUser);
+      
       // Save to localStorage
-      localStorage.setItem(`user_${user.uid}`, JSON.stringify({
+      localStorage.setItem(`user_data_${user.uid}`, JSON.stringify({
         freeVideosRemaining: user.freeVideosRemaining,
         isSubscribed: isActive
       }));

@@ -34,6 +34,7 @@ export interface ChatMessage {
   isCaption?: boolean;
   needsFeedback?: boolean;
   approved?: boolean;
+  isOptions?: boolean;
 }
 
 const ChatBot: React.FC = () => {
@@ -51,8 +52,6 @@ const ChatBot: React.FC = () => {
   const [showGenerateCaptionsButton, setShowGenerateCaptionsButton] = useState(false);
   const [isGeneratingCaptions, setIsGeneratingCaptions] = useState(false);
   const [awaitingFeedback, setAwaitingFeedback] = useState(false);
-  
-  const PROJECT_API_KEY = "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";
   
   useEffect(() => {
     const initialMessage: ChatMessage = {
@@ -128,43 +127,54 @@ const ChatBot: React.FC = () => {
       
       const clipCountInfo = `[Context: The user has uploaded ${clipCount} video clips that need TikTok-style captions.]`;
       
-      const systemPrompt = `You are a TikTok caption expert that helps create viral, engaging, and SPECIFIC captions for videos. Follow these rules:
+      const systemPrompt = `You are a professional TikTok storytelling expert. Create a continuous narrative across all clips that:
+1. Tells ONE cohesive story from start to finish
+2. Makes each caption flow naturally into the next
+3. Creates a perfect voiceover-ready script
+4. Uses exactly 2 emojis per caption
+5. Generate EXACTLY ${clipCount} connected captions, numbered from 1 to ${clipCount}
+6. Each caption MUST be exactly 10 words (except the last caption which should be shorter)
+7. Match this format, but make it ONE continuous story:
 
-1. Always format captions as a numbered list (1., 2., etc.)
-2. Each caption MUST include:
-   - Specific facts, names, dates, or statistics about the topic
-   - Short and punchy (max 15 words)
-   - Relevant emojis (2-3 per caption)
-   - NO hashtags (do not use # symbol)
-   - Match TikTok trends and style
-3. For lists and rankings:
-   - Actually name the items (e.g., "World War II: 60M casualties 💔")
-   - Include key facts or statistics
-   - Make it educational but engaging
-4. For different formats like:
-   - Rankings: Name each item specifically ("WW2: 60M+ deaths")
-   - Educational: Include actual facts ("The first iPhone launched in 2007 📱")
-   - Historical: Use real dates and events
-5. Always start with a brief intro like "Here are some viral TikTok captions for your video:" or similar
-6. End with a friendly closer like "Hope these help your video go viral! 🚀"
+1. "Watch me transform this basic hoodie into something special 🎯 Ready? ✨"
+2. "See this clever design feature I added right here 🔥 Amazing! 💫"
+${clipCount > 2 ? `${clipCount}. "Get yours now at 75% off! 🛍️ Limited time! 💥"` : ""}
 
-Example for "iPhone history":
-1. "The first iPhone in 2007 changed everything 📱✨"
-2. "Over 2.2 billion iPhones sold worldwide 🌍"
-etc.
+Story Structure Rules:
+- First clip: Hook and introduce the topic (10 words)
+- Middle clips: Build the story with connected points (10 words)
+- Last clip: Short call-to-action (5-7 words)
+- Each caption should lead naturally to the next
+- Create anticipation for what's coming next
+- Make it feel like ONE continuous voiceover
 
-IMPORTANT: Never use hashtags or # symbols in any captions.
+Rules for emojis:
+- Place first emoji after 7-8 words
+- Place second emoji at the very end
+- Use trending emojis like: 🤔 ✨ 🎯 💫 🔥 💪 🎧 ✈️ 😍 💥
+- Never use more than 2 emojis per caption
 
-${clipCountInfo}`;
+Each caption must be:
+- Numbered with a period (1., 2., etc.)
+- Wrapped in double quotes
+- End with exclamation mark and emoji
+- Connected to previous and next captions
+- Exactly 10 words (except last caption)
+- Separated by newlines
+
+Example of continuous flow with word count:
+1. "Let me show you this amazing hoodie I found 🤔 Watch! ✨" (10 words)
+2. "Now check out the special feature hidden right here 🎯 Look! 💫" (10 words)
+3. "Get yours now at 75% off today! 🛍️ Hurry! 💥" (7 words)`;
 
       const response = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${PROJECT_API_KEY}`,
+          'Authorization': `Bearer ${import.meta.env.VITE_OPENAI_API_KEY}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: "gpt-4o-mini",
+          model: "gpt-4",
           messages: [
             {
               role: "system",
@@ -174,12 +184,12 @@ ${clipCountInfo}`;
             {
               role: "user",
               content: userMessage.startsWith("Make TikTok viral captions") 
-                ? userMessage 
-                : `Create viral TikTok captions for this topic: ${userMessage}`
+                ? `${userMessage} (Generate exactly ${clipCount} captions)`
+                : `Create exactly ${clipCount} viral TikTok captions in the specified format for: ${userMessage}`
             }
           ],
-          temperature: 0.8,
-          max_tokens: 800,
+          temperature: 0.7,
+          max_tokens: Math.max(800, clipCount * 100), // Increase token limit for more captions
           presence_penalty: 0.6,
           frequency_penalty: 0.3,
         }),
@@ -262,15 +272,145 @@ ${clipCountInfo}`;
     setAwaitingFeedback(false);
 
     if (!isPositive) {
-      // If feedback is negative, ask for what they'd like to change
-      const feedbackRequest: ChatMessage = {
+      // If feedback is negative, provide options for regeneration
+      const feedbackOptions: ChatMessage = {
         id: Date.now().toString(),
-        content: "I'm sorry these captions weren't what you wanted. What would you like me to change about them?",
+        content: `I can help adjust the captions. What would you like me to do?
+
+Choose an option:
+1️⃣ Make captions longer (more detailed)
+2️⃣ Make captions shorter (more concise)
+3️⃣ Keep same length but different style
+4️⃣ Start over with new captions
+
+Or tell me specifically what you'd like to change about them.`,
         sender: 'bot',
         timestamp: new Date()
       };
-      setMessages(prev => [...prev, feedbackRequest]);
+      setMessages(prev => [...prev, feedbackOptions]);
+
+      // Add the options buttons message
+      const optionsMessage: ChatMessage = {
+        id: (Date.now() + 1).toString(),
+        content: 'OPTION_BUTTONS',
+        sender: 'bot',
+        timestamp: new Date(),
+        isOptions: true
+      };
+      setMessages(prev => [...prev, optionsMessage]);
     }
+  };
+
+  const handleRegenerateCaptions = async (option: string) => {
+    setIsGeneratingCaptions(true);
+    let prompt = '';
+    
+    switch(option) {
+      case 'longer':
+        prompt = `Create ${clipCount} longer, more detailed TikTok captions that tell a continuous story. Add more context and description while keeping the viral style!`;
+        break;
+      case 'shorter':
+        prompt = `Create ${clipCount} shorter, punchier TikTok captions that tell a continuous story. Make them more concise but keep the viral impact!`;
+        break;
+      case 'same':
+        prompt = `Create ${clipCount} fresh TikTok captions with the same length but a different creative approach. Keep the continuous story flow!`;
+        break;
+      case 'new':
+        prompt = `Create ${clipCount} completely new TikTok captions with a fresh perspective and continuous story. Start over with a new creative direction!`;
+        break;
+    }
+
+    try {
+      const response = await callChatGPT(prompt);
+      
+      const botMessage: ChatMessage = {
+        id: Date.now().toString(),
+        content: response,
+        sender: 'bot',
+        timestamp: new Date(),
+        needsFeedback: true
+      };
+      
+      setMessages(prev => [...prev, botMessage]);
+      
+      if (clipCount > 0) {
+        await generateCaptionsForClips(botMessage.id);
+      }
+    } catch (error) {
+      toast.error("Failed to regenerate captions. Please try again.");
+    } finally {
+      setIsGeneratingCaptions(false);
+    }
+  };
+
+  const renderMessage = (message: ChatMessage) => {
+    if (message.isOptions) {
+      return (
+        <div className="flex flex-wrap gap-2 justify-center mt-2">
+          <Button
+            onClick={() => handleRegenerateCaptions('longer')}
+            className="bg-blue-600 hover:bg-blue-700 text-white text-sm px-4 py-2"
+            disabled={isGeneratingCaptions}
+          >
+            1️⃣ Longer Captions
+          </Button>
+          <Button
+            onClick={() => handleRegenerateCaptions('shorter')}
+            className="bg-green-600 hover:bg-green-700 text-white text-sm px-4 py-2"
+            disabled={isGeneratingCaptions}
+          >
+            2️⃣ Shorter Captions
+          </Button>
+          <Button
+            onClick={() => handleRegenerateCaptions('same')}
+            className="bg-purple-600 hover:bg-purple-700 text-white text-sm px-4 py-2"
+            disabled={isGeneratingCaptions}
+          >
+            3️⃣ Same Length, New Style
+          </Button>
+          <Button
+            onClick={() => handleRegenerateCaptions('new')}
+            className="bg-indigo-600 hover:bg-indigo-700 text-white text-sm px-4 py-2"
+            disabled={isGeneratingCaptions}
+          >
+            4️⃣ Start Over
+          </Button>
+        </div>
+      );
+    }
+
+    return (
+      <div
+        className={`p-3 rounded-lg ${
+          message.sender === 'user'
+            ? 'bg-indigo-600 text-white rounded-tr-none'
+            : message.isCaption 
+              ? 'bg-gradient-to-r from-blue-800 to-indigo-800 text-white rounded-tl-none'
+              : 'bg-gray-800 text-gray-100 rounded-tl-none'
+        }`}
+      >
+        <p className="text-sm break-words whitespace-pre-wrap">{message.content}</p>
+        <span className="text-xs opacity-70 mt-1 block">
+          {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+        </span>
+        {message.needsFeedback && !message.approved && (
+          <div className="mt-2 flex gap-2">
+            <Button
+              onClick={() => handleFeedback(message.id, true)}
+              className="bg-green-600 hover:bg-green-700 text-white text-sm px-3 py-1"
+            >
+              Yes 👍
+            </Button>
+            <Button
+              onClick={() => handleFeedback(message.id, false)}
+              className="bg-red-600 hover:bg-red-700 text-white text-sm px-3 py-1"
+            >
+              No 👎
+            </Button>
+          </div>
+        )}
+      </div>
+    );
   };
 
   const clearChat = () => {
@@ -363,42 +503,16 @@ ${clipCountInfo}`;
         .map(line => line.trim())
         .filter(line => line.length > 0);
 
-      // Find the first line that contains a numbered caption
-      const firstCaptionIndex = lines.findIndex(line => {
-        const match = line.match(/^\d+\.\s*[""]([^""]+)[""]/);
-        return match !== null;
-      });
-
-      if (firstCaptionIndex === -1) {
-        toast.error("No valid captions found in the format '1. \"Caption text\"'");
-        return;
-      }
-
-      // Process only lines after the first caption is found
-      for (let i = firstCaptionIndex; i < lines.length; i++) {
-        const line = lines[i];
-        
-        // Skip empty lines or lines that look like outros
-        if (!line.trim() || 
-            line.toLowerCase().includes('hope these') ||
-            line.toLowerCase().includes('let me know')) {
-          continue;
-        }
-
-        // Look for numbered captions with quotes
+      // Process each line looking for the exact format: number. "caption with emojis!"
+      for (const line of lines) {
         const captionMatch = line.match(/^(\d+)\.\s*[""]([^""]+)[""]/);
         if (captionMatch) {
           const captionNumber = parseInt(captionMatch[1]);
           let captionText = captionMatch[2].trim();
           
-          // Remove any hashtags and clean up the text
-          captionText = captionText
-            .replace(/#\w+/g, '') // Remove hashtags with their text
-            .replace(/\s+/g, ' ') // Clean up extra spaces
-            .trim();
-          
-          // Only store if we have a matching clip and it's a valid caption
-          if (captionNumber <= mediaClips.length && captionText.length > 0) {
+          // Ensure the caption has exactly two emojis
+          const emojiCount = (captionText.match(/[\u{1F300}-\u{1F9FF}]/gu) || []).length;
+          if (emojiCount === 2 && captionNumber <= mediaClips.length) {
             generatedCaptions[captionNumber] = captionText;
           }
         }
@@ -421,9 +535,9 @@ ${clipCountInfo}`;
           .sort(([a], [b]) => parseInt(a) - parseInt(b))
           .map(([index, caption]) => {
             const clipNumber = parseInt(index);
-            return `Clip ${clipNumber}: ${caption}`;
+            return `${clipNumber}. "${caption}"`;
           })
-          .join('\n');
+          .join('\n\n');
 
         const captionsMessage: ChatMessage = {
           id: Date.now().toString(),
@@ -442,7 +556,7 @@ ${clipCountInfo}`;
         
         toast.success(`Successfully applied ${Object.keys(generatedCaptions).length} captions to your clips!`);
       } else {
-        toast.error("Could not extract valid captions. Please ensure captions are in the format '1. \"Caption text\"'");
+        toast.error("Could not extract valid captions. Please ensure each caption has exactly two emojis.");
       }
     } catch (error) {
       console.error("Error generating captions:", error);
@@ -613,36 +727,7 @@ ${clipCountInfo}`;
                     </Avatar>
                   )}
                   
-                  <div
-                    className={`p-3 rounded-lg ${
-                      message.sender === 'user'
-                        ? 'bg-indigo-600 text-white rounded-tr-none'
-                        : message.isCaption 
-                          ? 'bg-gradient-to-r from-blue-800 to-indigo-800 text-white rounded-tl-none'
-                          : 'bg-gray-800 text-gray-100 rounded-tl-none'
-                    }`}
-                  >
-                    <p className="text-sm break-words whitespace-pre-wrap">{message.content}</p>
-                    <span className="text-xs opacity-70 mt-1 block">
-                      {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                    </span>
-                    {message.needsFeedback && !message.approved && (
-                      <div className="mt-2 flex gap-2">
-                        <Button
-                          onClick={() => handleFeedback(message.id, true)}
-                          className="bg-green-600 hover:bg-green-700 text-white text-sm px-3 py-1"
-                        >
-                          Yes 👍
-                        </Button>
-                        <Button
-                          onClick={() => handleFeedback(message.id, false)}
-                          className="bg-red-600 hover:bg-red-700 text-white text-sm px-3 py-1"
-                        >
-                          No 👎
-                        </Button>
-                      </div>
-                    )}
-                  </div>
+                  {renderMessage(message)}
 
                   {message.sender === 'user' && (
                     <Avatar className="h-8 w-8 mt-1">

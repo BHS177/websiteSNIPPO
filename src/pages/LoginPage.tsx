@@ -65,7 +65,7 @@ const LoginPage = () => {
           <AnimatedLogo 
             size="xl" 
             color="rgba(139, 92, 246, 0.8)" 
-            text="Ajwad AI Editor" 
+            text="SNIPPO.IO" 
             className="mx-auto"
           />
         </motion.div>
@@ -77,7 +77,7 @@ const LoginPage = () => {
           transition={{ delay: 0.3, duration: 0.8 }}
         >
           <h1 className="text-4xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-purple-300 via-fuchsia-400 to-purple-400">
-            Welcome to Ajwad AI Editor
+            Welcome to SNIPPO.IO
           </h1>
           <p className="text-gray-400">Please sign in to continue</p>
         </motion.div>

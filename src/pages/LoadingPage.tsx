@@ -98,7 +98,7 @@ const LoadingPage = () => {
               ease: "easeInOut" 
             }}
           >
-            Ajwad AI Editor
+            SNIPPO.IO
           </motion.h1>
           
           <motion.p 

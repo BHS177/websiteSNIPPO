@@ -2,7 +2,7 @@
 
 import { toast } from "sonner";
 
-const PROJECT_API_KEY = "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";
+const PROJECT_API_KEY = import.meta.env.VITE_OPENAI_API_KEY;
 const MAX_RETRIES = 2;
 
 export const getMaskedApiKey = (): string => "Pre-configured";

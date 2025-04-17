@@ -58,6 +58,7 @@
     "lucide-react": "^0.462.0",
     "next": "^15.2.4",
     "next-themes": "^0.3.0",
+    "openai": "^4.94.0",
     "react": "^18.3.1",
     "react-beautiful-dnd": "^13.1.1",
     "react-colorful": "^5.6.1",

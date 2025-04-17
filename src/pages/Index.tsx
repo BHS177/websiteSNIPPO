@@ -7,14 +7,14 @@ import { useAuth } from '../contexts/AuthContext';
 import VideoCreativeFactory from "@/components/VideoCreativeFactory";
 import Footer from "@/components/Footer";
 import FuturisticButton from "@/components/FuturisticButton";
-import AnimatedLogo from "@/components/AnimatedLogo";
+import Logo from "@/components/Logo";
 import RocketAnimation from "@/components/RocketAnimation";
 import ChatBot from "@/components/ChatBot";
 import SubscriptionModal from "@/components/SubscriptionModal";
 
 // Memoize static components
 const MemoizedRocketAnimation = memo(RocketAnimation);
-const MemoizedAnimatedLogo = memo(AnimatedLogo);
+const MemoizedLogo = memo(Logo);
 const MemoizedVideoCreativeFactory = memo(VideoCreativeFactory);
 const MemoizedChatBot = memo(ChatBot);
 const MemoizedFooter = memo(Footer);
@@ -158,16 +158,14 @@ const Index = () => {
                 className="text-center w-full"
               >
                 <motion.div
-                  className="mb-10"
+                  className="mb-16"
                   initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ duration: 0.8 }}
                 >
-                  <MemoizedAnimatedLogo 
-                    size="xl" 
-                    color="rgba(139, 92, 246, 0.8)" 
-                    text="Ajwad AI Editor " 
-                    className="mx-auto"
+                  <MemoizedLogo 
+                    size="xl"
+                    className="mx-auto w-[400px] h-auto"
                   />
                 </motion.div>
                 
@@ -188,7 +186,7 @@ const Index = () => {
                   <motion.span 
                     className="inline-block bg-clip-text text-transparent bg-gradient-to-r from-purple-400 via-fuchsia-300 to-purple-300"
                   >
-                    Magic
+                    Videos
                   </motion.span>
                 </motion.h1>
                 
@@ -198,7 +196,11 @@ const Index = () => {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.8, delay: 0.8 }}
                 >
-                  Transform your ideas into stunning video content
+                  ✨ Turn Your Ideas into Viral Videos in Seconds! 🚀
+                  <br />
+                  <span className="text-lg md:text-xl opacity-80">
+                    AI-Powered • Professional Captions • Perfect Music 🎵
+                  </span>
                 </motion.p>
                 
                 <motion.div
@@ -230,10 +232,10 @@ const Index = () => {
             >
               <div className="mb-10 text-center">
                 <h2 className="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-300 via-fuchsia-400 to-purple-400 mb-4">
-                  AI Assistant Chat
+                  SNIPPO.IO Assistant
                 </h2>
                 <p className="text-xl text-purple-200 max-w-2xl mx-auto">
-                  Get creative suggestions and assistance with your video projects
+                  Describe to AI Assistant your video. Choose shortcuts like "POV" to instantly create engaging content.
                 </p>
               </div>
               <div className="rounded-2xl backdrop-blur-lg p-8 bg-black/40 border border-indigo-500/20 shadow-2xl mb-20"

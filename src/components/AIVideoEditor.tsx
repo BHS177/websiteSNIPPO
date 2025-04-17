@@ -37,104 +37,65 @@ const renderTikTokCaptionOverlay = (
   ctx: CanvasRenderingContext2D,
   canvas: HTMLCanvasElement,
   text: string,
-  position: TextOverlay['position'],
-  animationTime: number
+  position: TextOverlay['position'] = 'bottom',
+  elapsed: number
 ) => {
-  if (!text) return;
+  // Set text properties
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
   
-  // TikTok-style caption settings - white text with black outline
-  const fontSize = 42; // Increased from 28 to 42 for bigger captions
-  const fontFamily = 'Arial, Helvetica, sans-serif';
-  const textColor = '#FFFFFF';
-  const maxWidth = canvas.width * 0.85; // Increased from 0.75 to 0.85 to accommodate larger text
+  // Convert text to uppercase
+  const upperText = text.toUpperCase();
   
-  // Performance optimization: Use cached font settings
-  if (ctx.font !== `bold ${fontSize}px ${fontFamily}`) {
-    ctx.font = `bold ${fontSize}px ${fontFamily}`;
-  }
-  if (ctx.textAlign !== 'center') {
-    ctx.textAlign = 'center';
-  }
-  if (ctx.textBaseline !== 'middle') {
-    ctx.textBaseline = 'middle';
-  }
+  // Calculate font size based on canvas width
+  const fontSize = Math.min(canvas.width * 0.07, 60); // Adjust size but cap it
+  ctx.font = `bold ${fontSize}px "Arial Black", Arial, sans-serif`;
   
-  // Cache word wrapping results for frequently used texts
-  const cacheKey = `${text}_${maxWidth}`;
-  let lines: string[];
-  
-  // Create static text cache for repeated rendering
-  if (!window._captionCache) {
-    window._captionCache = new Map<string, string[]>();
-  }
-  
-  if (window._captionCache.has(cacheKey)) {
-    lines = window._captionCache.get(cacheKey) || [];
-  } else {
-    // Word wrapping to create lines that fit the maxWidth
-    const words = text.split(' ');
-    lines = [];
-    let currentLine = '';
-    
-    for (let i = 0; i < words.length; i++) {
-      let testLine = currentLine ? `${currentLine} ${words[i]}` : words[i];
-      let metrics = ctx.measureText(testLine);
-      
-      if (metrics.width > maxWidth && i > 0) {
-        lines.push(currentLine);
-        currentLine = words[i];
-      } else {
-        currentLine = testLine;
-      }
-    }
-    lines.push(currentLine); // Add the last line
-    
-    // Cache the result for future use
-    window._captionCache.set(cacheKey, lines);
-  }
-  
-  // Calculate dimensions for text positioning
-  const lineHeight = fontSize * 1.3; // Increased from 1.2 to 1.3 for better spacing between lines
-  const textHeight = lineHeight * lines.length;
-  
-  // Position x in center, y lower in the frame
-  const x = canvas.width / 2;
-  const y = canvas.height * 0.8; // Moved slightly lower from 0.75 to 0.8 for better positioning
-  
-  // Use a simplified, high-performance rendering approach
-  // Save current context state
-  ctx.save();
-  
-  // Disable shadow for the outline pass for better performance
-  ctx.shadowBlur = 0;
-  ctx.shadowColor = 'transparent';
-  
-  // First pass: draw all outlines
-  ctx.lineWidth = 6; // Increased from 4 to 6 for better visibility with larger text
+  // Text style for TikTok-like captions
+  const strokeWidth = fontSize * 0.08; // Proportional stroke width
+  ctx.lineWidth = strokeWidth;
   ctx.strokeStyle = 'black';
+  ctx.fillStyle = 'white';
   
-  // Draw all outlines in one batch for better performance
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i].toUpperCase(); // TikTok style uses uppercase
-    const lineY = y - (textHeight / 2) + (i * lineHeight) + (lineHeight / 2);
+  // Split text into words and add line breaks
+  const words = upperText.split(' ');
+  const lines: string[] = [];
+  let currentLine = '';
+  
+  words.forEach(word => {
+    const testLine = currentLine ? `${currentLine} ${word}` : word;
+    const metrics = ctx.measureText(testLine);
+    
+    if (metrics.width > canvas.width * 0.85) {
+      lines.push(currentLine);
+      currentLine = word;
+    } else {
+      currentLine = testLine;
+    }
+  });
+  if (currentLine) {
+    lines.push(currentLine);
+  }
+  
+  // Calculate total height of text block
+  const lineHeight = fontSize * 1.2;
+  const totalHeight = lines.length * lineHeight;
+  
+  // Position higher from the bottom with increased padding
+  const bottomPadding = canvas.height * 0.25; // Increased from 0.15 (15%) to 0.25 (25%)
+  const y = canvas.height - totalHeight - bottomPadding;
+  const x = canvas.width / 2;
+  
+  // Draw each line with stroke and fill
+  lines.forEach((line, index) => {
+    const lineY = y + index * lineHeight;
+    
+    // Draw stroke (outline)
     ctx.strokeText(line, x, lineY);
-  }
-  
-  // Optimize by not using multiple shadows - just one simple shadow
-  ctx.shadowColor = 'rgba(0,0,0,0.8)'; // Increased shadow opacity from 0.7 to 0.8
-  ctx.shadowBlur = 3; // Increased from 2 to 3 for better visibility
-  ctx.shadowOffsetX = 2; // Increased from 1 to 2
-  ctx.shadowOffsetY = 2; // Increased from 1 to 2
-  
-  // Second pass: draw all text fills with one shadow setting
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i].toUpperCase();
-    const lineY = y - (textHeight / 2) + (i * lineHeight) + (lineHeight / 2);
-    ctx.fillStyle = textColor;
+    
+    // Draw fill (white text)
     ctx.fillText(line, x, lineY);
-  }
-  
-  ctx.restore();
+  });
 };
 
 // Additional optimizations for rendering performance
@@ -431,15 +392,15 @@ const AIVideoEditor: React.FC<AIVideoEditorProps> = ({ clips, onGenerateVideo })
   const [musicVolume, setMusicVolume] = useState<number>(0.25);
 
   // Add the preloadClip function back
-  const preloadClip = async (clip: VideoClip) => {
-    if (clip.type === 'video') {
-      const video = document.createElement('video');
-      video.src = clip.url || '';
-      video.muted = true;
-      video.playsInline = true;
-      video.preload = 'auto';
-      video.crossOrigin = 'anonymous';
-      
+      const preloadClip = async (clip: VideoClip) => {
+        if (clip.type === 'video') {
+          const video = document.createElement('video');
+          video.src = clip.url || '';
+          video.muted = true;
+          video.playsInline = true;
+          video.preload = 'auto';
+          video.crossOrigin = 'anonymous';
+          
       // Force hardware acceleration
       video.style.transform = 'translateZ(0)';
       video.style.backfaceVisibility = 'hidden';
@@ -454,54 +415,54 @@ const AIVideoEditor: React.FC<AIVideoEditorProps> = ({ clips, onGenerateVideo })
       video.defaultPlaybackRate = 1.0;
       
       // Wait for video to be fully loaded and buffered
-      await new Promise<void>((resolve, reject) => {
+          await new Promise<void>((resolve, reject) => {
         const loadTimeout = setTimeout(() => reject(new Error('Video load timeout')), 60000);
-        
-        const checkBuffer = () => {
-          if (video.readyState >= 4) {
-            clearTimeout(loadTimeout);
+            
+            const checkBuffer = () => {
+              if (video.readyState >= 4) {
+                clearTimeout(loadTimeout);
             // Pre-buffer by playing a frame
             video.currentTime = 0;
             video.play().then(() => {
               video.pause();
-              resolve();
+                resolve();
             }).catch(reject);
-          } else {
+              } else {
             setTimeout(checkBuffer, 100);
-          }
-        };
-        
+              }
+            };
+            
         video.addEventListener('loadedmetadata', checkBuffer);
-        video.addEventListener('error', (e) => {
-          clearTimeout(loadTimeout);
-          reject(new Error(`Video load error: ${e}`));
-        }, { once: true });
-        
-        video.load();
-      });
+            video.addEventListener('error', (e) => {
+              clearTimeout(loadTimeout);
+              reject(new Error(`Video load error: ${e}`));
+            }, { once: true });
+            
+            video.load();
+          });
+          
+          return { clip, element: video };
+        } else {
+          const img = new Image();
+          img.crossOrigin = 'anonymous';
+          img.src = clip.url || '';
       
-      return { clip, element: video };
-    } else {
-      const img = new Image();
-      img.crossOrigin = 'anonymous';
-      img.src = clip.url || '';
-      
-      await new Promise<void>((resolve, reject) => {
+          await new Promise<void>((resolve, reject) => {
         const loadTimeout = setTimeout(() => reject(new Error('Image load timeout')), 30000);
-        img.onload = () => {
-          clearTimeout(loadTimeout);
-          resolve();
-        };
-        img.onerror = () => {
-          clearTimeout(loadTimeout);
-          reject(new Error('Image load error'));
-        };
-      });
+            img.onload = () => {
+              clearTimeout(loadTimeout);
+              resolve();
+            };
+            img.onerror = () => {
+              clearTimeout(loadTimeout);
+              reject(new Error('Image load error'));
+            };
+          });
       
-      return { clip, element: img };
-    }
-  };
-
+          return { clip, element: img };
+        }
+      };
+      
   // Add these state variables at the top of the component with other state declarations
   const [backgroundMusicEnabled, setBackgroundMusicEnabled] = useState<boolean>(true);
   const [selectedMusicId, setSelectedMusicId] = useState<string | null>(null);
@@ -620,7 +581,7 @@ const AIVideoEditor: React.FC<AIVideoEditorProps> = ({ clips, onGenerateVideo })
       
       // Create audio context with high quality settings
       const audioContext = new AudioContext({
-        latencyHint: 'playback',
+        latencyHint: 'interactive',
         sampleRate: 48000
       });
       
@@ -628,11 +589,11 @@ const AIVideoEditor: React.FC<AIVideoEditorProps> = ({ clips, onGenerateVideo })
       const voiceoverGain = audioContext.createGain();
       const musicGain = audioContext.createGain();
       
-      // Set up audio routing
-      voiceoverGain.gain.value = 1.0; // Full volume for voiceovers
+      // Set up audio routing with crossfade capability
+      voiceoverGain.gain.value = 1.0;
       voiceoverGain.connect(audioDestination);
       
-      musicGain.gain.value = backgroundMusicEnabled ? musicVolume : 0; // Use selected volume or 0 if disabled
+      musicGain.gain.value = backgroundMusicEnabled ? musicVolume * 0.5 : 0; // Reduce music volume during voiceovers
       musicGain.connect(audioDestination);
       
       // Load and set up background music if enabled
@@ -642,13 +603,11 @@ const AIVideoEditor: React.FC<AIVideoEditorProps> = ({ clips, onGenerateVideo })
         if (selectedTrack) {
           console.log(`Setting up background music: ${selectedTrack.name} at volume ${musicVolume}`);
           backgroundMusic = new Audio(selectedTrack.url);
-          backgroundMusic.loop = true; // Enable looping for longer videos
+          backgroundMusic.loop = true;
           
-          // Connect background music to gain node
           const musicSource = audioContext.createMediaElementSource(backgroundMusic);
           musicSource.connect(musicGain);
           
-          // Wait for music to be ready
           await new Promise<void>((resolve, reject) => {
             const loadTimeout = setTimeout(() => reject(new Error('Music load timeout')), 30000);
             backgroundMusic!.addEventListener('canplaythrough', () => {
@@ -717,27 +676,44 @@ const AIVideoEditor: React.FC<AIVideoEditorProps> = ({ clips, onGenerateVideo })
         try {
           console.log('Starting background music playback');
           await backgroundMusic.play();
-        } catch (error) {
+          } catch (error) {
           console.error('Error starting background music:', error);
+          }
         }
-      }
       
       let currentClipIndex = 0;
       let elapsedInClip = 0;
       let lastFrameTime = performance.now();
       let isFrameProcessing = false;
+      let activeVoiceovers: { voiceover: HTMLAudioElement; startTime: number; clipIndex: number; duration: number; }[] = [];
+      let nextVoiceoverQueued = false;
+      let forceNextClip = false;
       
       const renderFrame = async (clipIndex: number, elapsed: number) => {
         if (isFrameProcessing) return null;
         isFrameProcessing = true;
         
         try {
-          const { clip, element } = preloadedClips[clipIndex];
-          const voiceover = voiceoverEnabled ? voiceOvers[clipIndex] : null;
+        const { clip, element } = preloadedClips[clipIndex];
+          const currentVoiceover = voiceoverEnabled ? voiceOvers[clipIndex] : null;
+          const isLastClip = clipIndex === preloadedClips.length - 1;
           
-          const clipDuration = voiceoverEnabled && voiceover 
-            ? Math.max(voiceover.duration, clip.duration || 5)
-            : (clip.duration || 5);
+          // Base clip duration on the clip's duration or default to 5 seconds
+          const clipDuration = clip.duration || 5;
+          
+          // Start current clip's voiceover if not already playing
+          if (currentVoiceover && 
+              elapsed < 0.1 && 
+              !activeVoiceovers.some(v => v.voiceover === currentVoiceover)) {
+            currentVoiceover.currentTime = 0;
+            await currentVoiceover.play().catch(console.error);
+            activeVoiceovers.push({ 
+              voiceover: currentVoiceover, 
+              startTime: performance.now(),
+              clipIndex: clipIndex,
+              duration: currentVoiceover.duration
+            });
+          }
           
           // Render video/image
           if (clip.type === 'video' && element instanceof HTMLVideoElement) {
@@ -757,14 +733,14 @@ const AIVideoEditor: React.FC<AIVideoEditorProps> = ({ clips, onGenerateVideo })
             ctx.drawImage(element, 0, 0, canvas.width, canvas.height);
           }
           
-          // Handle captions and voiceover
+          // Handle captions
           if (clip.textOverlay?.text) {
-            if (voiceoverEnabled && voiceover && elapsed < 0.1 && voiceover.paused) {
-              voiceover.currentTime = 0;
-              await voiceover.play().catch(console.error);
-            }
-            
             renderTikTokCaptionOverlay(ctx, canvas, clip.textOverlay.text, clip.textOverlay.position || 'bottom', elapsed);
+          }
+          
+          // For last clip, ensure minimum duration matches voiceover length
+          if (isLastClip && currentVoiceover) {
+            return Math.max(clipDuration, currentVoiceover.duration);
           }
           
           return clipDuration;
@@ -784,23 +760,67 @@ const AIVideoEditor: React.FC<AIVideoEditorProps> = ({ clips, onGenerateVideo })
           if (clipDuration !== null) {
             elapsedInClip += deltaTime;
             
-            if (elapsedInClip >= clipDuration) {
+            // Special handling for the last clip
+            const isLastClip = currentClipIndex === preloadedClips.length - 1;
+            const currentVoiceover = voiceOvers[currentClipIndex];
+            
+            // For non-last clips, transition when either clip duration is reached or voiceover ends
+            const shouldTransition = !isLastClip && (
+              elapsedInClip >= clipDuration || 
+              (clipDuration === 0) ||
+              (currentVoiceover && elapsedInClip >= currentVoiceover.duration)
+            );
+            
+            if (shouldTransition) {
+              // Handle transition to next clip
               currentClipIndex++;
               elapsedInClip = 0;
               
+              // Start next clip's voiceover
+              const nextVoiceover = voiceOvers[currentClipIndex];
+              if (nextVoiceover && !activeVoiceovers.some(v => v.voiceover === nextVoiceover)) {
+                nextVoiceover.currentTime = 0;
+                await nextVoiceover.play().catch(console.error);
+                activeVoiceovers.push({ 
+                  voiceover: nextVoiceover, 
+                  startTime: performance.now(),
+                  clipIndex: currentClipIndex,
+                  duration: nextVoiceover.duration
+                });
+              }
+              
               const progress = (currentClipIndex / preloadedClips.length) * 100;
               setProgress(progress);
+            } else if (isLastClip) {
+              // For last clip, ensure both clip and voiceover complete before ending
+              const lastVoiceover = voiceOvers[currentClipIndex];
+              const voiceoverComplete = !lastVoiceover || elapsedInClip >= lastVoiceover.duration;
+              const clipComplete = elapsedInClip >= clipDuration;
+              
+              // Only end when both clip and voiceover are complete
+              if (clipComplete && voiceoverComplete) {
+                // Clean up all audio
+                activeVoiceovers.forEach(({ voiceover }) => {
+                  voiceover.pause();
+                  voiceover.currentTime = 0;
+                });
+                
+                if (backgroundMusic) {
+                  backgroundMusic.pause();
+                  backgroundMusic.currentTime = 0;
+                }
+                
+                mediaRecorder.stop();
+                audioContextRef.current?.close();
+                console.log('Video generation completed with last clip and voiceover');
+                return;
+              }
             }
+            
+            requestAnimationFrame(animate);
           }
-          
-          requestAnimationFrame(animate);
         } else {
-          // Stop background music before ending recording
-          if (backgroundMusic) {
-            backgroundMusic.pause();
-            backgroundMusic.currentTime = 0;
-          }
-          
+          // This block should now only be reached after the last clip finishes properly
           mediaRecorder.stop();
           audioContextRef.current?.close();
           console.log('Video generation completed');
@@ -839,7 +859,8 @@ const AIVideoEditor: React.FC<AIVideoEditorProps> = ({ clips, onGenerateVideo })
         return;
       }
 
-      // Check subscription status and video limits
+      // Skip subscription check for testing
+      /*
       if (!user?.isSubscribed && user?.freeVideosRemaining === 0) {
         setRenderError("You've used all your free video generations. Please upgrade to continue.");
         toast.error("No video generations remaining", {
@@ -851,6 +872,7 @@ const AIVideoEditor: React.FC<AIVideoEditorProps> = ({ clips, onGenerateVideo })
         });
         return;
       }
+      */
       
       setStatus('processing');
       setProgress(0);
